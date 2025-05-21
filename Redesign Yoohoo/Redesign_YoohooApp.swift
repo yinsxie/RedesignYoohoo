@@ -8,10 +8,40 @@
 import SwiftUI
 
 @main
-struct Redesign_YoohooApp: App {
+struct YoohooApp: App {
+    @State private var openForm = false
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            NavigationStack {
+                ListFriendView()
+                    .navigationDestination(isPresented: $openForm) {
+                        FormView()
+                    }
+                    .onOpenURL { url in
+                        if url.scheme == "yoohoo", url.host == "add-friend-form" {
+                            openForm = true
+                        }
+                    }
+            }
         }
+        .modelContainer(for: [Buddy.self])
     }
 }
+
+
+//
+//import SwiftUI
+//
+//@main
+//struct YoohooApp: App {
+//    var body: some Scene {
+//        WindowGroup {
+//            NavigationStack {
+//                ListFriendView()
+//            }
+//            .modelContainer(for: [Buddy.self])
+//        }
+//    }
+//}
+
