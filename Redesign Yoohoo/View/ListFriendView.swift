@@ -11,35 +11,33 @@ import SwiftUI
 
 struct ListFriendView: View {
     @Environment(\.modelContext) private var context
+    
+    @StateObject private var viewModel = FriendListViewModel(context: nil)
+    
     @State private var showAddFriend = false
-    @State private var searchText = ""
-    @State private var selectedSort: SortOption = .az
     @State private var showSortMenu = false
-    
-    
-    @Query(sort: \Buddy.name, order: .forward) private var friends: [Buddy]
     
     let columns = [
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
     ]
     
-    var filteredAndSortedFriends: [Buddy] {
-            let filtered = friends.filter { friend in
-                searchText.isEmpty || friend.name.localizedCaseInsensitiveContains(searchText)
-            }
-
-            switch selectedSort {
-            case .az:
-                return filtered.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            case .za:
-                return filtered.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedDescending }
-            case .latest:
-                return filtered.sorted { $0.createdAt > $1.createdAt }
-            case .earliest:
-                return filtered.sorted { $0.createdAt < $1.createdAt }
-            }
-        }
+//    var filteredAndSortedFriends: [Buddy] {
+//            let filtered = friends.filter { friend in
+//                searchText.isEmpty || friend.name.localizedCaseInsensitiveContains(searchText)
+//            }
+//
+//            switch selectedSort {
+//            case .az:
+//                return filtered.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+//            case .za:
+//                return filtered.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedDescending }
+//            case .latest:
+//                return filtered.sorted { $0.createdAt > $1.createdAt }
+//            case .earliest:
+//                return filtered.sorted { $0.createdAt < $1.createdAt }
+//            }
+//        }
     
     var body: some View {
         
@@ -67,7 +65,7 @@ struct ListFriendView: View {
                     //            searchbar
                     //            sorting
                     HStack{
-                        TextField("Cari nama temanmu", text: $searchText)
+                        TextField("Cari nama temanmu", text: $viewModel.searchText)
                             .font(.system(size: 17, weight: .semibold, design: .rounded))
                             .padding(16)
                             .background(Color.white)
@@ -101,7 +99,7 @@ struct ListFriendView: View {
                     
                     
                     LazyVGrid(columns: columns, spacing: 24) {
-                        if searchText.isEmpty {
+                        if viewModel.searchText.isEmpty {
                             Button {
                                 showAddFriend = true
                             } label: {
@@ -132,8 +130,9 @@ struct ListFriendView: View {
                             }
                         }
                         
-                        ForEach(filteredAndSortedFriends) { friend in
-                            FriendCardView(friend: friend)
+                        ForEach(viewModel.friends) { friend in
+                            let image = viewModel.loadImage(for: friend)
+                            FriendCardView(friend: friend, image: image)
                         }
                     }
                     
@@ -145,7 +144,7 @@ struct ListFriendView: View {
                     VStack(spacing: 0) {
                         ForEach(SortOption.allCases, id: \.self) { option in
                             Button {
-                                selectedSort = option
+                                viewModel.selectedSort = option
                                 showSortMenu = false
                             } label: {
                                 Text(option.rawValue)
@@ -177,6 +176,9 @@ struct ListFriendView: View {
             }
             
         }
+        .onAppear{
+            viewModel.setContext(context)
+        }
         .sheet(isPresented: $showAddFriend) {
             NavigationStack{
                 FormView()
@@ -190,11 +192,12 @@ struct ListFriendView: View {
 
 struct FriendCardView: View {
     let friend: Buddy
+    let image: UIImage?
     var body: some View {
         ZStack(alignment:.top) {
             
             
-            if let uiImage = loadImageFromDocuments(fileName: friend.image) {
+            if let uiImage = image {
                 Image(uiImage: uiImage)
                 
                     .resizable()
@@ -242,10 +245,6 @@ struct FriendCardView: View {
         }
         .frame(width: 161.25, height: 207 + 20)
         
-    }
-    private func loadImageFromDocuments(fileName: String) -> UIImage? {
-        let url = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent(fileName)
-        return UIImage(contentsOfFile: url.path)
     }
     
 }

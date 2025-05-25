@@ -29,19 +29,3 @@ struct YoohooApp: App {
     }
 }
 
-
-//
-//import SwiftUI
-//
-//@main
-//struct YoohooApp: App {
-//    var body: some Scene {
-//        WindowGroup {
-//            NavigationStack {
-//                ListFriendView()
-//            }
-//            .modelContainer(for: [Buddy.self])
-//        }
-//    }
-//}
-
